@@ -6,7 +6,7 @@
   <meta charset="UTF-8">
 
   <title>Happy Birthday</title>
-  <link rel="stylesheet" href="../css/styless.css" media="screen" type="text/css" />
+  <link rel="stylesheet" href="css/styless.css" media="screen" type="text/css" />
 </head>
 
 <body class="bg">
@@ -178,7 +178,7 @@
     </svg>
   </div>
   <div class="happy">
-    <img src="../img/HappyBirthday.png">
+    <img src="img/HappyBirthday.png">
   </div>
   <!-- 添加在 <div class="happy"> ... </div> 之后 -->
 
@@ -205,109 +205,106 @@
     <li></li>
   </ul>
   <!-- 1. 先引入 jQuery 库 -->
-  <script src='../js/jquery.js'></script>
+  <script src='js/jquery.js'></script>
 
   <!-- 2. 再另起一个标签写你的逻辑 -->
-  <script>
-    $(function () {
-      // 1. 获取元素
-      const $realBtn = $('#real-btn');
-      const $fakeBtn = $('#fake-btn');
-      const $toast = $('#toast-msg');
-      const $modal = $('#custom-modal');
+<script>
+  $(function () {
+    // 1. 获取元素
+    const $realBtn = $('#real-btn');
+    const $fakeBtn = $('#fake-btn');
+    const $modal = $('#custom-modal');
+    // 注意：文字现在是动态生成的，不再需要预先获取 #toast-msg
 
-      // 2. 音乐配置
-      const musicList = ['gangguan.mp3', 'jiao.mp3', 'weilianjiao.mp3', 'xiao.mp3', 'ya.mp3', 'yiye.mp3'];
-      let currentAudio = null;
+    // 2. 音乐配置 (确保文件名与 music 文件夹下一致)
+    const musicList = ['gangguan.mp3', 'jiao.mp3', 'weilianjiao.mp3', 'xiao.mp3', 'ya.mp3', 'yiye.mp3','cai.mp3'];
 
-      function playRandomMusic() {
-        if (currentAudio) {
-          currentAudio.pause();
-          currentAudio.currentTime = 0;
-        }
+    // --- 动态生成飘浮文字函数 ---
+    function createFloatingText(txt) {
+      // 动态创建一个 div
+      const $text = $('<div class="toast fade-up"></div>').text(txt);
+      
+      // 插入到按钮容器中（或者 body）
+      // 建议插入到按钮所在的父级容器里，以保持定位基准
+      $('.button-container').append($text);
 
-        const randomFile = musicList[Math.floor(Math.random() * musicList.length)];
-        const audioPath = `music/${randomFile}`;
+      // 2秒后自动删除 DOM 节点，释放内存
+      setTimeout(() => {
+        $text.remove();
+      }, 2000);
+    }
 
-        console.log("准备播放:", audioPath); // 调试用：看路径对不对
-
-        currentAudio = new Audio(audioPath);
-
-        // 尝试播放
-        let playPromise = currentAudio.play();
-
-        if (playPromise !== undefined) {
-          playPromise.catch(error => {
-            console.error("播放失败，原因:", error);
-            alert("浏览器拦截了自动播放，请先随便点击页面任何地方激活音频");
-          });
-        }
-      }
-
-      // 3. 真按钮逻辑
-      $realBtn.on('click', function () {
-        if ($(this).data('isDragging')) return;
-        $modal.css('display', 'flex');
-      });
-
-      $('.close-btn').on('click', function () {
-        $modal.hide();
-      });
-
-      // 4. 假按钮点击逻辑 (音乐 + 提示)
-      $fakeBtn.on('click', function () {
-        // 如果正在拖拽，就不触发点击
-        if ($(this).data('isDragging')) return;
-
-        console.log("假按钮被点击");
-        playRandomMusic();
-
-        $toast.removeClass('fade-up');
-        void $toast[0].offsetWidth;
-        $toast.addClass('fade-up');
-      });
-
-      // 5. 假按钮拖拽逻辑
-      let isDragging = false;
-      let offset = { x: 0, y: 0 };
-      let startPos = { x: 0, y: 0 };
-
-      $fakeBtn.on('mousedown touchstart', function (e) {
-        isDragging = true;
-        $(this).data('isDragging', false);
-
-        let event = e.type === 'mousedown' ? e : e.originalEvent.touches[0];
-        offset.x = event.pageX - $(this).offset().left;
-        offset.y = event.pageY - $(this).offset().top;
-        startPos.x = event.pageX;
-        startPos.y = event.pageY;
-
-        $(this).css({ 'transition': 'none', 'z-index': '1005' });
-      });
-
-      $(document).on('mousemove touchmove', function (e) {
-        if (isDragging) {
-          let event = e.type === 'mousemove' ? e : e.originalEvent.touches[0];
-
-          // 移动超过5像素才判定为拖拽
-          if (Math.abs(event.pageX - startPos.x) > 5 || Math.abs(event.pageY - startPos.y) > 5) {
-            $fakeBtn.data('isDragging', true);
-          }
-
-          $fakeBtn.offset({
-            top: event.pageY - offset.y,
-            left: event.pageX - offset.x
-          });
-
-          if (e.type === 'touchmove') e.preventDefault();
-        }
-      });
-
-      $(document).on('mouseup touchend', function () {
-        isDragging = false;
-      });
+    // 3. 真按钮逻辑：点击显示自定义弹窗
+    $realBtn.on('click', function () {
+      if ($(this).data('isDragging')) return;
+      $modal.css('display', 'flex');
     });
-  </script>
+
+    $('.close-btn').on('click', function () {
+      $modal.hide();
+    });
+
+    // 4. 假按钮逻辑：叠加播放音效 + 叠加弹出文字
+    $fakeBtn.on('click', function (e) {
+      // 如果正在拖拽，则不触发点击效果
+      if ($(this).data('isDragging')) return;
+
+      // A. 叠加播放音频
+      const randomFile = musicList[Math.floor(Math.random() * musicList.length)];
+      const audioPath = `music/${randomFile}`;
+      const newAudio = new Audio(audioPath); 
+      
+      newAudio.play().catch(err => {
+        console.log("音频播放被拦截，请先点击页面任意处激活权限", err);
+      });
+
+      // B. 叠加生成文字
+      createFloatingText("没抽到");
+    });
+
+    // 5. 假按钮拖拽逻辑
+    let isDragging = false;
+    let offset = { x: 0, y: 0 };
+    let startPos = { x: 0, y: 0 };
+
+    $fakeBtn.on('mousedown touchstart', function (e) {
+      isDragging = true;
+      $(this).data('isDragging', false);
+
+      let event = e.type === 'mousedown' ? e : e.originalEvent.touches[0];
+      offset.x = event.pageX - $(this).offset().left;
+      offset.y = event.pageY - $(this).offset().top;
+      startPos.x = event.pageX;
+      startPos.y = event.pageY;
+
+      $(this).css({ 'transition': 'none', 'z-index': '1005' });
+    });
+
+    $(document).on('mousemove touchmove', function (e) {
+      if (isDragging) {
+        let event = e.type === 'mousemove' ? e : e.originalEvent.touches[0];
+
+        // 判定是否产生了有效位移（超过5像素判定为拖拽）
+        if (Math.abs(event.pageX - startPos.x) > 5 || Math.abs(event.pageY - startPos.y) > 5) {
+          $fakeBtn.data('isDragging', true);
+        }
+
+        $fakeBtn.offset({
+          top: event.pageY - offset.y,
+          left: event.pageX - offset.x
+        });
+
+        // 防止触摸屏滚动
+        if (e.type === 'touchmove') e.preventDefault();
+      }
+    });
+
+    $(document).on('mouseup touchend', function () {
+      isDragging = false;
+      // 拖拽结束后可以根据需要恢复 z-index 或保持
+    });
+  });
+</script>
 
   <!-- 自定义弹窗 -->
   <div id="custom-modal" class="modal-overlay">
